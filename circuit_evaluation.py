@@ -1,10 +1,14 @@
+from enum import Enum
 import pyrtl
 from collections import namedtuple
 
 __all__ = ['evalute_circuit']
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
-
+class Operand(Enum):
+    AND = 0
+    OR = 1
+    MEM = 2
 
 def and_gate(a, b):
     return a & b
@@ -19,11 +23,11 @@ def mem_gate(mem, a):
 
 def translate(gate, inputs, num_memories, mem_idx=None):
     try:
-        if gate.operand == 'and':
+        if gate.operand == 'AND':
             return and_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
-        elif gate.operand == 'or':
+        elif gate.operand == 'OR':
             return or_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
-        elif gate.operand == 'mem':
+        elif gate.operand == 'MEM':
             return mem_gate(inputs[mem_idx], inputs[gate.inputs[0]+num_memories])
         else:
             raise ValueError(f'invalid gate operand {gate.operand}')
@@ -36,7 +40,7 @@ def mem_scan(matrix):
     memories = []
     for column in matrix:
         for gate in column:
-            if gate.operand == 'mem':
+            if gate.operand == 'MEM':
                 memories.append(pyrtl.wire.Register(1))
     return list(reversed(memories))
 
@@ -53,7 +57,7 @@ def evalute_circuit(n_inputs, matrix, input_bits, expected_output):
     outputs = connect_outputs(gate_matrix, matrix)
     output_bits = simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories)
 
-    return calculate_fitness(expected_output, output_bits)
+    return calculate_correctness(expected_output, output_bits)
 
 
 def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
@@ -63,7 +67,7 @@ def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
         gate_matrix.append(gate_column)
         for gate in column:
             gate_func = translate(gate, inputs, num_memories=num_memories, mem_idx=cur_memory)
-            if gate.operand == 'mem':
+            if gate.operand == 'MEM':
                 cur_memory -= 1
             gate_column.append(gate_func)
         inputs.extend(gate_column)
@@ -102,37 +106,3 @@ def calculate_correctness(expected, actual):
     total = len(actual)
     matches = [exp == act for (exp, act) in zip(expected, actual)]
     return sum(matches) / total
-
-
-input_bits = [
-    [0,0,0],
-    [0,0,1],
-    [0,0,0],
-    [1,1,1],
-    [0,0,0],
-    [0,0,0],
-    [0,0,1],
-]
-
-expected_output = [
-    [0,0],
-    [0,1],
-    [0,0],
-    [0,1],
-    [1,1],
-    [0,0],
-    [0,1],
-]
-
-
-matrix = [
-    [
-        Gate([0,1], 'and'),
-        Gate([2,-1], 'or'),
-    ],
-    [
-        Gate([3,9], 'mem'),
-        Gate([3,4], 'or'),
-    ],
-]
-print(evalute_circuit(3, matrix, input_bits, expected_output))
