@@ -2,7 +2,7 @@ from enum import Enum
 import pyrtl
 from collections import namedtuple
 
-__all__ = ['Gate', 'Operand', 'evalute_circuit']
+__all__ = ['Gate', 'Operand', 'evaluate_circuit']
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
 class Operand(Enum):
@@ -32,7 +32,7 @@ def translate(gate, inputs, num_memories, mem_idx=None):
         else:
             raise ValueError(f'invalid gate operand {gate.operand}')
     except IndexError:
-        raise Exception('Invalid input index detected!')
+        raise Exception(f'Invalid input index detected: {gate.inputs[0]} or {gate.inputs[1]}')
 
 
 def mem_scan(matrix):
@@ -61,11 +61,13 @@ def evaluate_circuit(n_inputs, matrix, input_bits, expected_output):
 
 
 def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
+
     gate_matrix = []
     for column in matrix:
         gate_column = []
         gate_matrix.append(gate_column)
         for gate in column:
+
             gate_func = translate(gate, inputs, num_memories=num_memories, mem_idx=cur_memory)
             if gate.operand == Operand.MEM:
                 cur_memory -= 1

@@ -1,4 +1,4 @@
-from circuit_evaluation import Gate, Operand, evalute_circuit
+from circuit_evaluation import Gate, Operand, evaluate_circuit
 
 
 def example():
@@ -32,7 +32,7 @@ def example():
             Gate([3,4], Operand.OR),
         ],
     ]
-    print(evalute_circuit(3, matrix, input_bits, expected_output))
+    print(evaluate_circuit(3, matrix, input_bits, expected_output))
 
 
 if __name__ == '__main__':

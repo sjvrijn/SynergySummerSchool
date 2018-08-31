@@ -33,7 +33,8 @@ def create_matrix(individual, n, n_inputs, n_operators):
     for x in range(n):
         col = []
         for y in range(n):
-            container.append( (random.randint(0,n_inputs + n*x), random.randint(0,n_inputs + n*x), random.randint(0,n_operators)) )
+            container.append( (random.randint(0,n_inputs-1), random.randint(0,n_inputs-1), random.randint(0,n_operators-1)) )
+        n_inputs += MATRIX_DIM
     ind = individual(container)
 
     return ind
@@ -46,8 +47,10 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 #Population parameters
 MATRIX_DIM = 2
 N_INPUTS = 1
-N_OPERATORS = 2
-POP_SIZE = 100
+N_OPERATORS = len(Operand)
+POP_SIZE = 20
+op_mutation_rate = 0.25
+input_mutation_rate = 0.125
 
 
 #Register an individual: a list of tuples, with each tuple representing a gate
@@ -86,11 +89,11 @@ output_bits = [
     [0,0],
     [0,0],
     [0,0],
-    [1,0],
+    [1,1],
     [0,0],
     [0,0],
-    [1,0],
-    [1,0],
+    [1,1],
+    [1,1],
     [0,0],
     [0,0],
     [0,0],
@@ -111,6 +114,36 @@ def crossOver(ind1, ind2):
 
 def mutate(ind, n_operators):
     #swap operator to random one
+
+    # mutate operands first and count how many memories we have
+    num_memories = 0
+    for idx, gate_tuple in enumerate(ind):
+        input1, input2, operand = gate_tuple
+        if random.random() < op_mutation_rate:
+            operand = random.randint(0, len(Operand)-1)
+        if Operand(operand) == Operand.MEM:
+            num_memories += 1
+        ind[idx] = (input1, input2, operand)
+
+    min_input = -num_memories
+    max_input = n_inputs - 1
+
+    # Now we mutate the inputs based on the available gates and global inputs
+    for idx, gate_tuple in enumerate(ind):
+        input1, input2, operand = gate_tuple
+        # First we repair any indices that may have become broken by memory that was removed
+        if input1 < min_input:
+            input1 = random.randint(min_input, max_input)
+        if input2 < min_input:
+            input2 = random.randint(min_input, max_input)
+
+        # Now we actually mutate
+        if random.random() < input_mutation_rate:
+            input1 = random.randint(min_input, max_input)
+        if random.random() < input_mutation_rate:
+            input2 = random.randint(min_input, max_input)
+        ind[idx] = (input1, input2, operand)
+
     return (ind,)
 
 
@@ -125,7 +158,7 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 #cxbp = crossover chance
 #mztpb = mutation rate
 #ngen = number of generations
-logbook = algorithms.eaSimple(pop, toolbox, cxpb=0, mutpb=0.2, ngen=1000)
+logbook = algorithms.eaSimple(pop, toolbox, cxpb=0, mutpb=0.2, ngen=100)
 
 #pop now has the final population
 for ind in pop:
