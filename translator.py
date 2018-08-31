@@ -1,5 +1,6 @@
 import pyrtl
 from collections import namedtuple
+from fitness import calculate_fitness
 
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
@@ -40,7 +41,7 @@ def mem_scan(matrix):
     return list(reversed(memories))
 
 
-def evalute_circuit_representation(n_inputs, matrix, input_bits):
+def evalute_circuit_representation(n_inputs, matrix, input_bits, expected_output):
 
     global_inputs = [pyrtl.Input(1, str(inp)) for inp in range(n_inputs)]
     inputs = mem_scan(matrix)
@@ -52,7 +53,7 @@ def evalute_circuit_representation(n_inputs, matrix, input_bits):
     outputs = connect_outputs(gate_matrix, matrix)
     output_bits = simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories)
 
-    # return fitness(output_bits)
+    return calculate_fitness(expected_output, output_bits)
 
 
 def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
@@ -81,19 +82,32 @@ def simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories):
     sim = pyrtl.Simulation(tracer=sim_trace)
     output = []
     for bits in input_bits:
-        bits_in = {inp.name: int(bit) for inp, bit in zip(inputs[num_memories:num_memories + n_inputs], bits)}
+        bits_in = {inp.name: bit for inp, bit in zip(inputs[num_memories:num_memories + n_inputs], bits)}
         sim.step(bits_in)
         output.append([sim.inspect(out) for out in outputs])
     return output
 
 
-input_bits = ['000',
-              '001',
-              '000',
-              '111',
-              '000',
-              '000',
-              '001']
+input_bits = [
+    [0,0,0],
+    [0,0,1],
+    [0,0,0],
+    [1,1,1],
+    [0,0,0],
+    [0,0,0],
+    [0,0,1],
+]
+
+expected_output = [
+    [0,0],
+    [0,1],
+    [0,0],
+    [0,1],
+    [1,1],
+    [0,0],
+    [0,1],
+]
+
 
 matrix = [
     [
@@ -105,5 +119,4 @@ matrix = [
         Gate([3,4], 'or'),
     ],
 ]
-
-evalute_circuit_representation(3, matrix, input_bits)
+print(evalute_circuit_representation(3, matrix, input_bits, expected_output))
