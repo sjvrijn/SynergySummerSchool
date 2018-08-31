@@ -1,4 +1,5 @@
-from circuit_evaluation import Gate
+from circuit_evaluation import Gate, Operand, evalute_circuit
+from itertools import product
 
 import random
 
@@ -8,20 +9,22 @@ from deap import tools
 
 from deap import algorithms
 
-from fitness import evaluate
+def int_tuple_to_Gate(int_tuple):
+    input1, input2, operand = int_tuple
+    return Gate([input1, input2], Operand(operand))
 
 
 
-def int_list_to_gates(int_list):
+def int_list_to_gates(int_list, shape):
 
-    gates = []
+    matrix = [[] for _ in range(shape[1])]
+    matrix_indices = product(range(shape[1]), range(shape[0]))
 
+    for int_tuple, index in zip(int_list, matrix_indices):
+        col, row = index
+        matrix[col][row] = int_tuple_to_Gate(int_tuple)
 
-
-
-
-    return gates
-
+    return matrix
 
 
 
@@ -59,7 +62,7 @@ pop = toolbox.population(POP_SIZE=100)
 
 #TODO: Fitness function
 def evalOneMax(individual):
-	#TODO: evaluate function
+    #TODO: evaluate function
     return (sum(individual),)
 
 def crossOver(ind1, ind2):
@@ -69,7 +72,7 @@ def crossOver(ind1, ind2):
 
 def mutate(ind, n_operators):
     #swap operator to random one
-    ind[2]= randint(0, n_operators)
+    ind[2]= random.randint(0, n_operators)
     return ind
 
 
@@ -85,8 +88,7 @@ logbook = algorithms.eaSimple(pop, toolbox, cxpb=0, mutpb=0.2, ngen=1000)
 
 #pop now has the final population
 for ind in pop:
-	print(ind)
-	print(ind.fitness.values)
-	print()
-
+    print(ind)
+    print(ind.fitness.values)
+    print()
 
