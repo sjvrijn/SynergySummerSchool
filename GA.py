@@ -43,27 +43,31 @@ creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
 
-
-MATRIX_DIM=3
+#Population parameters
+MATRIX_DIM = 3
 N_INPUTS = 4
 N_OPERATORS = 3
 POP_SIZE = 100
 
 
+#Register an individual: a list of tuples, with each tuple representing a gate
 toolbox = base.Toolbox()
 toolbox.register("attr_int", random.random)
 toolbox.register("individual", create_matrix, creator.Individual,
                   n=MATRIX_DIM, n_inputs=N_INPUTS, n_operators=N_OPERATORS)
 
 
+#Create a population: list of individuals
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-pop = toolbox.population(POP_SIZE=100)
+pop = toolbox.population(POP_SIZE)
 
 
-#TODO: Fitness function
-def evalOneMax(individual):
-    #TODO: evaluate function
-    return (sum(individual),)
+
+
+#Define genetic operators
+def evaluate(individual):
+    #TODO: evaluate function, has to retrun a tuple with a single member: the fitness
+    return (individual[0][0],)
 
 def crossOver(ind1, ind2):
     #don't do crossover
@@ -76,11 +80,14 @@ def mutate(ind, n_operators):
     return ind
 
 
+#setup the algorithm: link the above functions, set selection strategy
 toolbox.register("mutate", mutate, n_operators=N_OPERATORS)
-toolbox.register("evaluate", evalOneMax)
+toolbox.register("evaluate", evaluate)
 toolbox.register("mate", crossOver)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
+
+#start the simple builtin algorithm
 #cxbp = crossover chance
 #mztpb = mutation rate
 #ngen = number of generations
@@ -91,4 +98,5 @@ for ind in pop:
     print(ind)
     print(ind.fitness.values)
     print()
+
 
