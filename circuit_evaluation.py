@@ -1,7 +1,7 @@
 import pyrtl
 from collections import namedtuple
-from fitness import calculate_fitness
 
+__all__ = ['evalute_circuit']
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
 
@@ -41,7 +41,7 @@ def mem_scan(matrix):
     return list(reversed(memories))
 
 
-def evalute_circuit_representation(n_inputs, matrix, input_bits, expected_output):
+def evalute_circuit(n_inputs, matrix, input_bits, expected_output):
 
     global_inputs = [pyrtl.Input(1, str(inp)) for inp in range(n_inputs)]
     inputs = mem_scan(matrix)
@@ -88,6 +88,22 @@ def simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories):
     return output
 
 
+def calculate_correctness(expected, actual):
+    """
+    Returns the percentage of integers in actual that match the ones in expected
+
+    Actual and Expected should be 2D lists
+    """
+
+    # flatten lists
+    expected = [item for sublist in expected for item in sublist]
+    actual = [item for sublist in actual for item in sublist]
+
+    total = len(actual)
+    matches = [exp == act for (exp, act) in zip(expected, actual)]
+    return sum(matches) / total
+
+
 input_bits = [
     [0,0,0],
     [0,0,1],
@@ -119,4 +135,4 @@ matrix = [
         Gate([3,4], 'or'),
     ],
 ]
-print(evalute_circuit_representation(3, matrix, input_bits, expected_output))
+print(evalute_circuit(3, matrix, input_bits, expected_output))
