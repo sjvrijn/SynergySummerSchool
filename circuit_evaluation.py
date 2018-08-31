@@ -45,8 +45,8 @@ def mem_scan(matrix):
     return list(reversed(memories))
 
 
-def evalute_circuit(n_inputs, matrix, input_bits, expected_output):
-
+def evaluate_circuit(n_inputs, matrix, input_bits, expected_output):
+    pyrtl.reset_working_block()
     global_inputs = [pyrtl.Input(1, str(inp)) for inp in range(n_inputs)]
     inputs = mem_scan(matrix)
     num_memories = len(inputs)

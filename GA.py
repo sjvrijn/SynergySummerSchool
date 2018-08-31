@@ -1,4 +1,4 @@
-from circuit_evaluation import Gate, Operand, evalute_circuit
+from circuit_evaluation import Gate, Operand, evaluate_circuit
 from itertools import product
 
 import random
@@ -17,7 +17,7 @@ def int_tuple_to_Gate(int_tuple):
 
 def int_list_to_gates(int_list, shape):
 
-    matrix = [[] for _ in range(shape[1])]
+    matrix = [[None for _ in range(shape[0])] for _ in range(shape[1])]
     matrix_indices = product(range(shape[1]), range(shape[0]))
 
     for int_tuple, index in zip(int_list, matrix_indices):
@@ -44,9 +44,9 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 
 
 #Population parameters
-MATRIX_DIM = 3
-N_INPUTS = 4
-N_OPERATORS = 3
+MATRIX_DIM = 2
+N_INPUTS = 1
+N_OPERATORS = 2
 POP_SIZE = 100
 
 
@@ -63,11 +63,46 @@ pop = toolbox.population(POP_SIZE)
 
 
 
+n_inputs = 1
+n_outputs = 2
+input_bits = [
+    [0],
+    [1],
+    [0],
+    [1],
+    [1],
+    [0],
+    [1],
+    [1],
+    [1],
+    [0],
+    [1],
+    [0],
+    [0],
+]
+output_bits = [
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [0,0],
+    [1,0],
+    [0,0],
+    [0,0],
+    [1,0],
+    [1,0],
+    [0,0],
+    [0,0],
+    [0,0],
+]
+
 
 #Define genetic operators
 def evaluate(individual):
     #TODO: evaluate function, has to retrun a tuple with a single member: the fitness
-    return (individual[0][0],)
+    matrix = int_list_to_gates(individual, (MATRIX_DIM, MATRIX_DIM))
+    e = evaluate_circuit(n_inputs,matrix, input_bits, output_bits)
+    return (e,)
 
 def crossOver(ind1, ind2):
     #don't do crossover
@@ -76,8 +111,7 @@ def crossOver(ind1, ind2):
 
 def mutate(ind, n_operators):
     #swap operator to random one
-    ind[2]= random.randint(0, n_operators)
-    return ind
+    return (ind,)
 
 
 #setup the algorithm: link the above functions, set selection strategy
