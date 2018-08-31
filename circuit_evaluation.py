@@ -2,7 +2,7 @@ from enum import Enum
 import pyrtl
 from collections import namedtuple
 
-__all__ = ['evalute_circuit']
+__all__ = ['Gate', 'Operand', 'evalute_circuit']
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
 class Operand(Enum):
@@ -23,11 +23,11 @@ def mem_gate(mem, a):
 
 def translate(gate, inputs, num_memories, mem_idx=None):
     try:
-        if gate.operand == 'AND':
+        if gate.operand == Operand.AND:
             return and_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
-        elif gate.operand == 'OR':
+        elif gate.operand == Operand.OR:
             return or_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
-        elif gate.operand == 'MEM':
+        elif gate.operand == Operand.MEM:
             return mem_gate(inputs[mem_idx], inputs[gate.inputs[0]+num_memories])
         else:
             raise ValueError(f'invalid gate operand {gate.operand}')
@@ -40,7 +40,7 @@ def mem_scan(matrix):
     memories = []
     for column in matrix:
         for gate in column:
-            if gate.operand == 'MEM':
+            if gate.operand == Operand.MEM:
                 memories.append(pyrtl.wire.Register(1))
     return list(reversed(memories))
 
@@ -67,7 +67,7 @@ def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
         gate_matrix.append(gate_column)
         for gate in column:
             gate_func = translate(gate, inputs, num_memories=num_memories, mem_idx=cur_memory)
-            if gate.operand == 'MEM':
+            if gate.operand == Operand.MEM:
                 cur_memory -= 1
             gate_column.append(gate_func)
         inputs.extend(gate_column)

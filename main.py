@@ -1,4 +1,4 @@
-from circuit_evaluation import Gate, evalute_circuit
+from circuit_evaluation import Gate, Operand, evalute_circuit
 
 
 def example():
@@ -24,12 +24,12 @@ def example():
 
     matrix = [
         [
-            Gate([0,1], 'AND'),
-            Gate([2,-1], 'OR'),
+            Gate([0,1], Operand.AND),
+            Gate([2,-1], Operand.OR),
         ],
         [
-            Gate([3,9], 'MEM'),
-            Gate([3,4], 'OR'),
+            Gate([3,9], Operand.MEM),
+            Gate([3,4], Operand.OR),
         ],
     ]
     print(evalute_circuit(3, matrix, input_bits, expected_output))
