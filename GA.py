@@ -1,18 +1,12 @@
-from circuit_evaluation import Gate, Operand, evaluate_circuit
-from itertools import product
-
 import random
+from itertools import product
+from deap import algorithms, base, creator, tools
+from circuit_evaluation import Gate, Operand, evaluate_circuit
 
-from deap import base
-from deap import creator
-from deap import tools
-
-from deap import algorithms
 
 def int_tuple_to_Gate(int_tuple):
     input1, input2, operand = int_tuple
     return Gate([input1, input2], Operand(operand))
-
 
 
 def int_list_to_gates(int_list, shape):
@@ -27,14 +21,17 @@ def int_list_to_gates(int_list, shape):
     return matrix
 
 
+def initialize_random_matrix(individual, shape, n_inputs, n_operators):
+    """Create a random matrix that represents a valid circuit"""
 
-def create_matrix(individual, n, n_inputs, n_operators):
+    cols, rows = shape
     container = []
-    for x in range(n):
-        col = []
-        for y in range(n):
-            container.append( (random.randint(0,n_inputs-1), random.randint(0,n_inputs-1), random.randint(0,n_operators-1)) )
-        n_inputs += MATRIX_DIM
+    for x in range(cols):
+        for y in range(rows):
+            container.append( (random.randint(0, n_inputs-1),
+                               random.randint(0, n_inputs-1),
+                               random.randint(0, n_operators-1)) )
+        n_inputs += rows
     ind = individual(container)
 
     return ind
@@ -45,7 +42,7 @@ creator.create("Individual", list, fitness=creator.FitnessMax)
 
 
 #Population parameters
-MATRIX_DIM = 2
+MATRIX_SHAPE = (2, 2)
 N_INPUTS = 1
 N_OPERATORS = len(Operand)
 POP_SIZE = 20
@@ -56,8 +53,8 @@ input_mutation_rate = 0.125
 #Register an individual: a list of tuples, with each tuple representing a gate
 toolbox = base.Toolbox()
 toolbox.register("attr_int", random.random)
-toolbox.register("individual", create_matrix, creator.Individual,
-                  n=MATRIX_DIM, n_inputs=N_INPUTS, n_operators=N_OPERATORS)
+toolbox.register("individual", initialize_random_matrix, creator.Individual,
+                 shape=MATRIX_SHAPE, n_inputs=N_INPUTS, n_operators=N_OPERATORS)
 
 
 #Create a population: list of individuals
@@ -103,14 +100,16 @@ output_bits = [
 #Define genetic operators
 def evaluate(individual):
     #TODO: evaluate function, has to retrun a tuple with a single member: the fitness
-    matrix = int_list_to_gates(individual, (MATRIX_DIM, MATRIX_DIM))
-    e = evaluate_circuit(n_inputs,matrix, input_bits, output_bits)
+    matrix = int_list_to_gates(individual, MATRIX_SHAPE)
+    e = evaluate_circuit(n_inputs, matrix, input_bits, output_bits)
     return (e,)
+
 
 def crossOver(ind1, ind2):
     #don't do crossover
     #the crossover rate should be zero anyway
     return ind1, ind2
+
 
 def mutate(ind, n_operators):
     #swap operator to random one
@@ -120,7 +119,7 @@ def mutate(ind, n_operators):
     for idx, gate_tuple in enumerate(ind):
         input1, input2, operand = gate_tuple
         if random.random() < op_mutation_rate:
-            operand = random.randint(0, len(Operand)-1)
+            operand = random.randint(0, n_operators-1)
         if Operand(operand) == Operand.MEM:
             num_memories += 1
         ind[idx] = (input1, input2, operand)

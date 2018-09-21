@@ -32,7 +32,8 @@ def example():
             Gate([3,4], Operand.OR),
         ],
     ]
-    print(evaluate_circuit(3, matrix, input_bits, expected_output))
+    print(evaluate_circuit(n_inputs=3, matrix=matrix,
+                           input_bits=input_bits, expected_output=expected_output))
 
 
 if __name__ == '__main__':
