@@ -5,16 +5,21 @@ from collections import namedtuple
 __all__ = ['Gate', 'Operand', 'evaluate_circuit']
 
 Gate = namedtuple('Gate', ['inputs', 'operand'])
+
+
 class Operand(Enum):
     AND = 0
     OR = 1
     MEM = 2
 
+
 def and_gate(a, b):
     return a & b
 
+
 def or_gate(a, b):
     return a | b
+
 
 def mem_gate(mem, a):
     mem.next <<= a
