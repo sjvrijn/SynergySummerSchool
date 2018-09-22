@@ -101,7 +101,7 @@ output_bits = [
 def evaluate(individual):
     #TODO: evaluate function, has to retrun a tuple with a single member: the fitness
     matrix = int_list_to_gates(individual, MATRIX_SHAPE)
-    e = evaluate_circuit(n_inputs, matrix, input_bits, output_bits)
+    e = evaluate_circuit(matrix, input_bits, output_bits)
     return (e,)
 
 
