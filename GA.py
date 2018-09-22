@@ -53,17 +53,36 @@ def crossOver(ind1, ind2):
     return ind1, ind2
 
 
-def mutate(individual, n_operators, n_inputs, op_mutation_rate, input_mutation_rate):
-    #swap operator to random one
+def mutate_sequential_circuit(individual, shape, n_operators, n_inputs, op_mutation_rate, input_mutation_rate):
+    """
+    Perform the mutation of a sequential circuit representation.
+
+    This is done in several steps:
+    1. First the operands of the gates in the circuits are mutated.
+       The number of Registers (after mutation) is simultaneously counted,
+       as we need this number to determine the valid Gate input numbers.
+
+    2. The input connections are mutated next. This can happen either
+       because it is randomly chosen to be mutated, or otherwise because
+       it was connected to a Register that no longer exists.
+
+    NOTE: THIS IS AN ARBITRARY DESIGN DECISION FOR THE MUTATION OPERATOR
+          IT MAY BE WORHTWHILE CONSIDERING ALTERNATIVES, SUCH AS
+          EXPLICITLY RECONNECTING IT TO ANOTHER REGISTER RATHER THAN
+          JUST ANY RANDOM AVAILABLE SIGNAL
+    """
+    num_cols, num_rows = shape
 
     # mutate operands first and count how many memories we have
     num_memories = 0
     for idx, gate_tuple in enumerate(individual):
         input1, input2, operand = gate_tuple
+
         if random.random() < op_mutation_rate:
             operand = random.randint(0, n_operators-1)
         if Operand(operand) == Operand.MEM:
             num_memories += 1
+
         individual[idx] = (input1, input2, operand)
 
     min_input = -num_memories
@@ -72,17 +91,15 @@ def mutate(individual, n_operators, n_inputs, op_mutation_rate, input_mutation_r
     # Now we mutate the inputs based on the available gates and global inputs
     for idx, gate_tuple in enumerate(individual):
         input1, input2, operand = gate_tuple
-        # First we repair any indices that may have become broken by memory that was removed
-        if input1 < min_input:
+
+        if idx > 0 and idx % num_rows == 0:
+            max_input += num_rows
+
+        if random.random() < input_mutation_rate or input1 < min_input:
             input1 = random.randint(min_input, max_input)
-        if input2 < min_input:
+        if random.random() < input_mutation_rate or input2 < min_input:
             input2 = random.randint(min_input, max_input)
 
-        # Now we actually mutate
-        if random.random() < input_mutation_rate:
-            input1 = random.randint(min_input, max_input)
-        if random.random() < input_mutation_rate:
-            input2 = random.randint(min_input, max_input)
         individual[idx] = (input1, input2, operand)
 
     return (individual,)
@@ -134,6 +151,8 @@ if __name__ == '__main__':
     N_GENERATIONS = 200
 
     # NOTE: these two separate mutation rates currently over-ride the DEAP-mutation rate
+    crossover_rate = 0
+    mutation_rate = 0.1
     op_mutation_rate = 0.25
     input_mutation_rate = 0.125
 
@@ -141,7 +160,6 @@ if __name__ == '__main__':
     toolbox = base.Toolbox()
 
     #Register an individual: a list of tuples, with each tuple representing a gate
-    toolbox.register("attr_int", random.random)
     toolbox.register("individual", initialize_random_matrix, creator.Individual,
                      shape=MATRIX_SHAPE, n_inputs=N_INPUTS, n_operators=N_OPERATORS)
 
@@ -150,7 +168,8 @@ if __name__ == '__main__':
     pop = toolbox.population(POP_SIZE)
 
     #setup the algorithm: link the above functions, set selection strategy
-    toolbox.register("mutate", mutate, n_operators=N_OPERATORS, n_inputs=N_INPUTS,
+    toolbox.register("mutate", mutate_sequential_circuit, shape=MATRIX_SHAPE,
+                     n_operators=N_OPERATORS, n_inputs=N_INPUTS,
                      op_mutation_rate=op_mutation_rate, input_mutation_rate=input_mutation_rate)
     toolbox.register("evaluate", evaluate, shape=MATRIX_SHAPE,
                      input_sequence=input_sequence, output_sequence=output_sequence)
@@ -158,11 +177,7 @@ if __name__ == '__main__':
     toolbox.register("select", tools.selTournament, tournsize=3)
 
 
-    #start the simple builtin algorithm
-    #cxbp = crossover chance
-    #mutpb = mutation rate
-    #ngen = number of generations
-    logbook = algorithms.eaSimple(pop, toolbox, cxpb=0, mutpb=0.2, ngen=N_GENERATIONS)
+    logbook = algorithms.eaSimple(pop, toolbox, cxpb=crossover_rate, mutpb=mutation_rate, ngen=N_GENERATIONS)
 
     #pop now has the final population
     for ind in pop:
