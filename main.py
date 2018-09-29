@@ -28,7 +28,7 @@ def example():
             Gate([2,-1], Operand.OR),
         ],
         [
-            Gate([3,9], Operand.MEM),
+            Gate([3,0], Operand.MEM),
             Gate([3,4], Operand.OR),
         ],
     ]
