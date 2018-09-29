@@ -45,6 +45,9 @@ def pass_gate(a):
 
 
 def translate(gate, inputs, num_memories, mem_idx=None):
+    """
+    Translate a `Gate` to pyrtl gate/connections
+    """
     idx_a, idx_b = gate.inputs
     input_a = inputs[idx_a + num_memories]
     input_b = inputs[idx_b + num_memories]
@@ -82,6 +85,9 @@ def translate(gate, inputs, num_memories, mem_idx=None):
 
 
 def mem_scan(matrix):
+    """
+    Scan the matrix of `Gate`s and create the registers.
+    """
 
     memories = []
     for column in matrix:
@@ -92,6 +98,10 @@ def mem_scan(matrix):
 
 
 def evaluate_circuit(matrix, input_sequence, expected_output):
+    """
+    Given a matrix of `Gate`s, evaluate how well `expected_output` matches the
+    actual output of the created circuit when given `input_sequence` as input.
+    """
     pyrtl.reset_working_block()
     n_inputs = len(input_sequence[0])
     global_inputs = [pyrtl.Input(1, str(inp)) for inp in range(n_inputs)]
@@ -108,6 +118,9 @@ def evaluate_circuit(matrix, input_sequence, expected_output):
 
 
 def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
+    """
+    Given a matrix of `Gate`s, create the actual pyrtl circuit
+    """
 
     gate_matrix = []
     for column in matrix:
@@ -124,6 +137,10 @@ def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
 
 
 def connect_outputs(gate_matrix, matrix):
+    """
+    Create and connect `pyrtl.Output`s for each of the gates in the last column
+    of the circuit matrix to serve as circuit outputs.
+    """
     outputs = [pyrtl.Output(1, f'out_{i}') for i in range(len(matrix[-1]))]
     for out, gate in zip(outputs, gate_matrix[-1]):
         out <<= gate
@@ -131,21 +148,23 @@ def connect_outputs(gate_matrix, matrix):
 
 
 def simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories):
+    """
+    Simulate and record the circuit output by passing in `input_bits`.
+    """
     sim_trace = pyrtl.SimulationTrace()
     sim = pyrtl.Simulation(tracer=sim_trace)
-    output = []
+    output_bits = []
     for bits in input_bits:
         bits_in = {inp.name: bit for inp, bit in zip(inputs[num_memories:num_memories + n_inputs], bits)}
         sim.step(bits_in)
-        output.append([sim.inspect(out) for out in outputs])
-    return output
+        output_bits.append([sim.inspect(out) for out in outputs])
+    return output_bits
 
 
 def calculate_correctness(expected, actual):
     """
-    Returns the percentage of integers in actual that match the ones in expected
-
-    Actual and Expected should be 2D lists
+    Returns the percentage of values in `actual` that match those in `expected`.
+    `actual` and `expected` should be 2D lists.
     """
 
     # flatten lists
