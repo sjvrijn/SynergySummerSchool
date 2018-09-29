@@ -102,35 +102,37 @@ def evaluate_circuit(matrix, input_sequence, expected_output):
     Given a matrix of `Gate`s, evaluate how well `expected_output` matches the
     actual output of the created circuit when given `input_sequence` as input.
     """
+    # Initialize the circuit
     pyrtl.reset_working_block()
-    n_inputs = len(input_sequence[0])
-    global_inputs = [pyrtl.Input(1, str(inp)) for inp in range(n_inputs)]
-    inputs = mem_scan(matrix)
-    num_memories = len(inputs)
-    cur_memory = num_memories - 1
-    inputs.extend(global_inputs)
 
-    gate_matrix = translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories)
-    outputs = connect_outputs(gate_matrix, matrix)
-    output_bits = simulate_circuit(input_sequence, inputs, outputs, n_inputs, num_memories)
+    # Create the initial 'connection points': inputs and registers
+    circuit_inputs = [pyrtl.Input(1, str(inp)) for inp in range(len(input_sequence[0]))]
+    registers = mem_scan(matrix)
+    connection_points = [*registers, *circuit_inputs]
 
+    # Create the actual pyrtl circuit and link the outputs
+    gate_matrix = translate_matrix_to_pyrtl(connection_points, matrix, len(registers))
+    circuit_outputs = connect_outputs(gate_matrix, matrix)
+
+    # Simulate and return correctness value between [0,1]
+    output_bits = simulate_circuit(circuit_inputs, input_sequence, circuit_outputs)
     return calculate_correctness(expected_output, output_bits)
 
 
-def translate_matrix_to_pyrtl(cur_memory, inputs, matrix, num_memories):
+def translate_matrix_to_pyrtl(inputs, matrix, num_registers):
     """
     Given a matrix of `Gate`s, create the actual pyrtl circuit
     """
+    current_register_idx = num_registers-1
 
     gate_matrix = []
     for column in matrix:
         gate_column = []
         gate_matrix.append(gate_column)
         for gate in column:
-
-            gate_func = translate(gate, inputs, num_memories=num_memories, mem_idx=cur_memory)
+            gate_func = translate(gate, inputs, num_memories=num_registers, mem_idx=current_register_idx)
             if gate.operand == Operand.MEM:
-                cur_memory -= 1
+                current_register_idx -= 1
             gate_column.append(gate_func)
         inputs.extend(gate_column)
     return gate_matrix
@@ -147,7 +149,7 @@ def connect_outputs(gate_matrix, matrix):
     return outputs
 
 
-def simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories):
+def simulate_circuit(circuit_inputs, input_bits, circuit_outputs):
     """
     Simulate and record the circuit output by passing in `input_bits`.
     """
@@ -155,9 +157,9 @@ def simulate_circuit(input_bits, inputs, outputs, n_inputs, num_memories):
     sim = pyrtl.Simulation(tracer=sim_trace)
     output_bits = []
     for bits in input_bits:
-        bits_in = {inp.name: bit for inp, bit in zip(inputs[num_memories:num_memories + n_inputs], bits)}
+        bits_in = {inp.name: bit for inp, bit in zip(circuit_inputs, bits)}
         sim.step(bits_in)
-        output_bits.append([sim.inspect(out) for out in outputs])
+        output_bits.append([sim.inspect(out) for out in circuit_outputs])
     return output_bits
 
 
