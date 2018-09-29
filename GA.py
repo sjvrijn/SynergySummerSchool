@@ -10,15 +10,15 @@ def int_tuple_to_Gate(int_tuple):
 
 
 def int_list_to_gates(int_list, shape):
-
-    matrix = [[None for _ in range(shape[0])] for _ in range(shape[1])]
+    """Create a matrix of Gates out of a pure list of integer tuples"""
+    gate_matrix = [[None for _ in range(shape[0])] for _ in range(shape[1])]
     matrix_indices = product(range(shape[1]), range(shape[0]))
 
     for int_tuple, index in zip(int_list, matrix_indices):
         col, row = index
-        matrix[col][row] = int_tuple_to_Gate(int_tuple)
+        gate_matrix[col][row] = int_tuple_to_Gate(int_tuple)
 
-    return matrix
+    return gate_matrix
 
 
 def random_gate(n_inputs, n_operators):
@@ -47,9 +47,8 @@ def evaluate(individual, shape, input_sequence, output_sequence):
     return (e,)
 
 
-def crossOver(ind1, ind2):
-    #don't do crossover
-    #the crossover rate should be zero anyway
+def crossover(ind1, ind2):
+    """Crossover function can be implemented here"""
     return ind1, ind2
 
 
@@ -150,12 +149,10 @@ if __name__ == '__main__':
     POP_SIZE = 20
     N_GENERATIONS = 200
 
-    # NOTE: these two separate mutation rates currently over-ride the DEAP-mutation rate
     crossover_rate = 0
-    mutation_rate = 0.1
-    op_mutation_rate = 0.25
-    input_mutation_rate = 0.125
-
+    mutation_rate = 1 / (MATRIX_SHAPE[0] * MATRIX_SHAPE[1])
+    op_mutation_rate = 1/3 * mutation_rate
+    input_mutation_rate = 1/3 * mutation_rate
 
     toolbox = base.Toolbox()
 
@@ -173,16 +170,13 @@ if __name__ == '__main__':
                      op_mutation_rate=op_mutation_rate, input_mutation_rate=input_mutation_rate)
     toolbox.register("evaluate", evaluate, shape=MATRIX_SHAPE,
                      input_sequence=input_sequence, output_sequence=output_sequence)
-    toolbox.register("mate", crossOver)
+    toolbox.register("mate", crossover)
     toolbox.register("select", tools.selTournament, tournsize=3)
 
 
     logbook = algorithms.eaSimple(pop, toolbox, cxpb=crossover_rate, mutpb=mutation_rate, ngen=N_GENERATIONS)
 
     #pop now has the final population
-    for ind in pop:
-        print(ind)
-        print(ind.fitness.values)
-        print()
-
+    for idx, ind in enumerate(pop):
+        print(f'{round(ind.fitness.values[0]*100, ndigits=1)}% :', ind)
 
