@@ -8,36 +8,77 @@ Gate = namedtuple('Gate', ['inputs', 'operand'])
 
 
 class Operand(Enum):
-    AND = 0
-    OR = 1
-    MEM = 2
+    NOT = 0
+    AND = 1
+    OR = 2
+    NAND = 3
+    NOR = 4
+    XOR = 5
+    MEM = 6
+    PASS = 7
 
+
+def not_gate(a):
+    return ~a
 
 def and_gate(a, b):
     return a & b
 
-
 def or_gate(a, b):
     return a | b
 
+def nand_gate(a, b):
+    return ~(a & b)
+
+def nor_gate(a, b):
+    return ~(a | b)
+
+def xor_gate(a, b):
+    return a ^ b
 
 def mem_gate(mem, a):
     mem.next <<= a
     return mem
 
+def pass_gate(a):
+    return a
+
 
 def translate(gate, inputs, num_memories, mem_idx=None):
+    idx_a, idx_b = gate.inputs
+    input_a = inputs[idx_a + num_memories]
+    input_b = inputs[idx_b + num_memories]
+
     try:
-        if gate.operand == Operand.AND:
-            return and_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
+        if gate.operand == Operand.NOT:
+            return not_gate(input_a)
+
+        elif gate.operand == Operand.AND:
+            return and_gate(input_a, input_b)
+
         elif gate.operand == Operand.OR:
-            return or_gate(inputs[gate.inputs[0]+num_memories], inputs[gate.inputs[1]+num_memories])
+            return or_gate(input_a, input_b)
+
+        elif gate.operand == Operand.NAND:
+            return nand_gate(input_a, input_b)
+
+        elif gate.operand == Operand.NOR:
+            return nor_gate(input_a, input_b)
+
+        elif gate.operand == Operand.XOR:
+            return xor_gate(input_a, input_b)
+
         elif gate.operand == Operand.MEM:
-            return mem_gate(inputs[mem_idx], inputs[gate.inputs[0]+num_memories])
+            return mem_gate(inputs[mem_idx], input_a)
+
+        elif gate.operand == Operand.PASS:
+            return pass_gate(input_a)
+
         else:
             raise ValueError(f'invalid gate operand {gate.operand}')
+
     except IndexError:
-        raise Exception(f'Invalid input index detected: {gate.inputs[0]} or {gate.inputs[1]}')
+        raise Exception(f'Invalid input index detected: {idx_a} or {idx_b}')
 
 
 def mem_scan(matrix):
